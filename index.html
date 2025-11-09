@@ -15,6 +15,8 @@
       // Mute the video element, use A-Frame sound component for audio
       this.videoEl.muted = true;
       this.videoEl.setAttribute('playsinline', '');
+      this.videoEl.loop = true; // Ensure video loops
+      this.audio.loop = true;   // Ensure audio loops
     },
     
     tick: function() {
@@ -43,7 +45,7 @@
     }
   });
 
-  // Add to video entity when scene loads
+  // Add proximity control to video when scene loads
   document.querySelector('a-scene').addEventListener('loaded', function() {
     document.querySelector('a-video').setAttribute('proximity-video-control', '');
   });
