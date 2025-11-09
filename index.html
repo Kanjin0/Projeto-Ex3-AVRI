@@ -4,35 +4,50 @@
     <script src="https://cdn.jsdelivr.net/npm/aframe-blink-controls/dist/aframe-blink-controls.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script> 
     <script>
-              AFRAME.registerComponent('proximity-video-control', {
-  init: function() {
-    this.video = document.querySelector('a-video');
-    this.videoEl = this.video.getAttribute('material').src;
-    this.isNear = false;
-  },
-  
-  tick: function() {
-    const camera = document.querySelector('#camera');
-    const videoPos = this.video.object3D.position;
-    const cameraPos = camera.object3D.position;
-    
-    const distance = cameraPos.distanceTo(videoPos);
-    
-    if (distance < 3 && !this.isNear) {
-      // User is close - play video
-      this.videoEl.play();
-      this.isNear = true;
-    } else if (distance >= 3 && this.isNear) {
-      // User moved away - pause video
-      this.videoEl.pause();
+  AFRAME.registerComponent('proximity-video-control', {
+    init: function() {
+      this.video = document.querySelector('a-video');
+      this.videoEl = this.video.getAttribute('material').src;
+      this.audioEntity = document.querySelector('#audio-entity');
+      this.audio = document.querySelector('#video-audio');
       this.isNear = false;
+      
+      // Mute the video element, use A-Frame sound component for audio
+      this.videoEl.muted = true;
+      this.videoEl.setAttribute('playsinline', '');
+    },
+    
+    tick: function() {
+      const camera = document.querySelector('#camera');
+      const videoPos = this.video.object3D.position;
+      const cameraPos = camera.object3D.position;
+      
+      const distance = cameraPos.distanceTo(videoPos);
+      
+      if (distance < 3 && !this.isNear) {
+        // User is close - play video and audio
+        this.videoEl.play();
+        this.audioEntity.components.sound.playSound();
+        this.isNear = true;
+      } else if (distance >= 3 && this.isNear) {
+        // User moved away - pause video and audio
+        this.videoEl.pause();
+        this.audioEntity.components.sound.stopSound();
+        this.isNear = false;
+      }
+      
+      // Sync audio with video
+      if (this.audioEntity.components.sound.isPlaying && Math.abs(this.audio.currentTime - this.videoEl.currentTime) > 0.1) {
+        this.audio.currentTime = this.videoEl.currentTime;
+      }
     }
-  }
-});
+  });
 
-// Add to video entity
-document.querySelector('a-video').setAttribute('proximity-video-control', '');
-       </script>
+  // Add to video entity when scene loads
+  document.querySelector('a-scene').addEventListener('loaded', function() {
+    document.querySelector('a-video').setAttribute('proximity-video-control', '');
+  });
+</script>
     
   </head>
   <body>
@@ -87,6 +102,7 @@ document.querySelector('a-video').setAttribute('proximity-video-control', '');
 
 
               <video id="congratulations" src="Textures/PARABAINS - bruN0 (240p, h264, youtube).mp4"  loop="true"></a-video>
+              <audio id="video-audio" src="Textures/PARABAINS - bruN0 (240p, h264, youtube).mp4"></audio>
        </a-assets>
 
       <!-- chão -->
@@ -147,7 +163,7 @@ document.querySelector('a-video').setAttribute('proximity-video-control', '');
        </a-entity>
 
        <a-video src="#congratulations" proximity-video-control position="-2.48496 2 1.97989" geometry="height: 0.9; width: 1.6" rotation="0 90 0"></a-video>
-       
+       <a-entity id="audio-entity" sound="src: #video-audio"></a-entity>
 
        <!-- camera rig -->
         <a-entity id="player" position="0 1.6 0"> <!--kinematic-body seems to make it want to load something so it might just work with an headset-->
